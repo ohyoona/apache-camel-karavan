@@ -1,29 +1,46 @@
 name: karavan
 
 services:
-
   karavan:
     container_name: karavan
     image: ghcr.io/apache/camel-karavan:4.14.2
     ports:
       - "8080:8080"
     environment:
+      # ============================================
+      # GitHub 연동 설정 (내부망 GitHub Enterprise)
+      # ============================================
+      # GitHub Enterprise URL (내부망)
+      # 예: http://github.internal.company.com/org/karavan-projects.git
+      # 공용 GitHub: https://github.com/your-org/karavan-projects.git
       - KARAVAN_GIT_REPOSITORY=${KARAVAN_GIT_REPOSITORY}
       - KARAVAN_GIT_USERNAME=${KARAVAN_GIT_USERNAME}
+      # Personal Access Token (PAT) 사용
       - KARAVAN_GIT_PASSWORD=${KARAVAN_GIT_PASSWORD}
-      - KARAVAN_GIT_BRANCH=main
+      - KARAVAN_GIT_BRANCH=${KARAVAN_GIT_BRANCH:-main}
+
+      # ============================================
+      # Container Registry 설정
+      # ============================================
       - KARAVAN_CONTAINER_IMAGE_REGISTRY=registry:5000
       - KARAVAN_CONTAINER_IMAGE_REGISTRY_USERNAME=
       - KARAVAN_CONTAINER_IMAGE_REGISTRY_PASSWORD=
       - KARAVAN_CONTAINER_IMAGE_GROUP=karavan
+
+      # ============================================
+      # Docker 설정
+      # ============================================
       - KARAVAN_DOCKER_NETWORK=karavan
+
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"    
-      - "./karavan-cache-data:/cache-data"    
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./karavan-cache-data:/cache-data
     labels:
-      - "org.apache.camel.karavan/type=internal"    
+      - "org.apache.camel.karavan/type=internal"
     networks:
       - karavan
+    depends_on:
+      - registry
 
   registry:
     container_name: registry
@@ -31,11 +48,16 @@ services:
     restart: always
     ports:
       - "5555:5000"
+    volumes:
+      - registry-data:/var/lib/registry
     labels:
-      - "org.apache.camel.karavan/type=internal"  
+      - "org.apache.camel.karavan/type=internal"
     networks:
-      - karavan  
+      - karavan
 
 networks:
   karavan:
     name: karavan
+
+volumes:
+  registry-data:
