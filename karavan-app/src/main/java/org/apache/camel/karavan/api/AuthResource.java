@@ -65,7 +65,9 @@ public class AuthResource extends AbstractApiResource {
             String csrf = random(16);
             var session = new AccessSession(sessionId, user.username, csrf, System.currentTimeMillis());
             karavanCache.saveAccessSession(session);
-            NewCookie sidCookie = new NewCookie.Builder(SESSION_ID).value(sessionId).path("/").maxAge(12 * 60 * 60).secure(true).httpOnly(true).build();
+            //  HTTP 에서도 쿠키 전송 허용
+            // NewCookie sidCookie = new NewCookie.Builder(SESSION_ID).value(sessionId).path("/").maxAge(12 * 60 * 60).secure(true).httpOnly(true).build();
+            NewCookie sidCookie = new NewCookie.Builder(SESSION_ID).value(sessionId).path("/").maxAge(12 * 60 * 60).secure(false).httpOnly(true).build();
             NewCookie csrfCookie = new NewCookie.Builder(CSRF).value(csrf).path("/").maxAge(12 * 60 * 60).secure(false).httpOnly(true).build();
             return Response.ok(JsonObject.of("username", user.getUsername(), "roles", user.getRoles()))
                     .cookie(sidCookie).cookie(csrfCookie).build();
